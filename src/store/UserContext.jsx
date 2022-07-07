@@ -1,24 +1,37 @@
-import {createContext, useState} from 'react';
+import {createContext, useReducer} from 'react';
+import userReducer from './UserReducers';
 const githubFinderToken = import.meta.env.VITE_GITHUB_FINDER;
 const githubURL = import.meta.env.VITE_GITHUB_URL;
 const UserContext = createContext();
 
 export const UserProvider = ({children}) => {
-    const [users, setUsers] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const initialState = {
+        users: [],
+        loading: false
+    }
+
+    const [state, dispatch] = useReducer(userReducer, initialState)
     
+    // get initial users
     const fetchUsers = async () => {
-        console.log(githubFinderToken, githubURL)
+        setLoading()
         const response = await fetch(`${githubURL}/users`, {
             headers: {
                 Authorization: `token ${githubFinderToken}`
             }
         })
         const data = await response.json()
-        setUsers(data);
-        setLoading(false);
+
+        dispatch({
+            type: 'GET_USERS',
+            payload: data,
+        })
     } 
-    return <UserContext.Provider value={{users, loading, fetchUsers}}>{children}</UserContext.Provider>
+
+    const setLoading = () => {
+        dispatch({type: 'SET_LOADING'})
+    }
+    return <UserContext.Provider value={{state, fetchUsers}}>{children}</UserContext.Provider>
 }
 
 export default UserContext;
